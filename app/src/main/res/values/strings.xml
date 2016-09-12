@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">USBInf</string>
+    <string name="usb_list">USB devices</string>
+    <string name="webcam_list">Webcams</string>
+</resources>

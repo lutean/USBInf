@@ -11,5 +11,8 @@ public class Consts {
     public static final int STATE_WAITING_PRECAPTURE = 2;
     public static final int STATE_WAITING_NON_PRECAPTURE = 3;
 
+    public static final int STD_USB_REQUEST_GET_DESCRIPTOR = 0x06;
+    public static final int USB_STRING = 0x03;
+
 
 }

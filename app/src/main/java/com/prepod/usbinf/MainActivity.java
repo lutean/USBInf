@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private  CustomDrawerAdapter adapter;
     private String[] mDrawerTitles;
     private TextView titleToolbar;
-    private PendingIntent permissionIntent;
+
 
     private List<DrawerItem> dataList = new ArrayList<>();
 
@@ -71,13 +71,6 @@ public class MainActivity extends AppCompatActivity {
         adapter = new CustomDrawerAdapter(this, R.layout.drawe_list_item, dataList);
         mDrawerList.setAdapter(adapter);
 
-        IntentFilter filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        registerReceiver(usbAttachReceiver , filter);
-        filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(usbDetachReceiver , filter);
-        permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
-        filter = new IntentFilter(ACTION_USB_PERMISSION);
-        registerReceiver(usbReceiver, filter);
         showUsbList();
     }
 
@@ -114,49 +107,5 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    BroadcastReceiver usbAttachReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
 
-            if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                showUsbList();
-            }
-        }
-    };
-
-    BroadcastReceiver usbDetachReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                UsbDevice device = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if (device != null) {
-                  showUsbList();
-                }
-            }
-        }
-    };
-
-    private static final String ACTION_USB_PERMISSION = "com.prepod.USB_PERMISSION";
-    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
-
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    UsbDevice device = (UsbDevice) intent
-                            .getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
-                    if (intent.getBooleanExtra(
-                            UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if (device != null) {
-                            showUsbList();
-                        }
-                    } else {
-                        // Log.d(TAG, "permission denied for device " + device);
-                    }
-                }
-            }
-        }
-    };
 }

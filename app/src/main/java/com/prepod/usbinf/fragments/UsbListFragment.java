@@ -5,10 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.hardware.usb.UsbConstants;
 import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbDeviceConnection;
-import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,7 +18,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.prepod.usbinf.DeviceInfo;
 import com.prepod.usbinf.R;
 import com.prepod.usbinf.helpers.DeviceHelper;
 
@@ -39,6 +38,7 @@ public class UsbListFragment extends Fragment {
     List<UsbDevice> deviceList = new ArrayList<>();
     private PendingIntent permissionIntent;
     private UsbManager manager;
+    private Context context;
 
     public UsbListFragment() {
         super();
@@ -53,6 +53,8 @@ public class UsbListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        context = getActivity();
+
         deviceListView = (ListView) getView().findViewById(R.id.usbList);
         adapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item, uniList);
         deviceListView.setAdapter(adapter);
@@ -60,10 +62,10 @@ public class UsbListFragment extends Fragment {
         IntentFilter filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         getActivity().registerReceiver(usbAttachReceiver , filter);
         filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        getActivity().registerReceiver(usbDetachReceiver , filter);
+        context.registerReceiver(usbDetachReceiver , filter);
         permissionIntent = PendingIntent.getBroadcast(getActivity(), 0, new Intent(ACTION_USB_PERMISSION), 0);
         filter = new IntentFilter(ACTION_USB_PERMISSION);
-        getActivity().registerReceiver(usbReceiver, filter);
+        context.registerReceiver(usbReceiver, filter);
 
         deviceListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -71,17 +73,24 @@ public class UsbListFragment extends Fragment {
                 if (!manager.hasPermission(deviceList.get(position))) {
                     requestDevicePermission(deviceList.get(position));
                 }else {
-                    DeviceHelper.connectToDevice(getActivity(), deviceList.get(position));
+                    String[] info = DeviceHelper.getInfo(getActivity(), deviceList.get(position));
+                    if (info != null) {
+                        Intent intent = new Intent(context, DeviceInfo.class);
+                        intent.putExtra("info", info);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(getActivity(), "No permission!", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
-        getDevices();
+        getDevices(context);
     }
 
-    private void getDevices(){
+    private void getDevices(Context context){
         uniList.clear();
         deviceList.clear();
-        manager = (UsbManager) getActivity().getSystemService(Context.USB_SERVICE);
+        manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         deviceMap = manager.getDeviceList();
         Iterator<UsbDevice> deviceIterator = deviceMap.values().iterator();
         while(deviceIterator.hasNext()) {
@@ -102,7 +111,7 @@ public class UsbListFragment extends Fragment {
             String action = intent.getAction();
 
             if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
-                getDevices();
+                getDevices(context);
             }
         }
     };
@@ -114,7 +123,7 @@ public class UsbListFragment extends Fragment {
             if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
                 UsbDevice device = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                 if (device != null) {
-                    getDevices();
+                    getDevices(context);
                 }
             }
         }
@@ -139,7 +148,15 @@ public class UsbListFragment extends Fragment {
                     if (intent.getBooleanExtra(
                             UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if (device != null) {
-                           DeviceHelper.connectToDevice(getActivity(), device);
+
+                           /* String[] info = DeviceHelper.getInfo(context, device);
+                            if (info != null) {
+                                Intent intentAct = new Intent(getActivity(), DeviceInfo.class);
+                                intentAct.putExtra("info", info);
+                                startActivity(intentAct);
+                            } else {
+                                Toast.makeText(getActivity(), "No permission!", Toast.LENGTH_SHORT).show();
+                            }*/
                         }
                     } else {
                         // Log.d(TAG, "permission denied for device " + device);
